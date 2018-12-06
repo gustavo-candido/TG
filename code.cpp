@@ -134,7 +134,30 @@ public:
     }
 
     int chromatic() {
-        return -1;
+    	int ans=0;
+        
+        map<int, int> painted;
+
+        set<int> colour;
+
+        for(int i=1; i<=N; i++) {
+        	colour.insert(i);
+        }
+
+        for(auto u: adj) {
+        	for(auto v: u.second) 
+        		if(painted.count(v)) colour.erase(painted[v]);
+
+        	painted[u.first] = *colour.begin();
+
+        	ans = max(ans, painted[u.first]);
+
+        	for(auto v: adj[u.first]) 
+        		if(painted.count(v)) colour.insert(painted[v]);
+        }
+
+        return ans;
+
     }
     ///////////////////////////////////////////////////////////
 
@@ -315,64 +338,72 @@ Graph build_max_comp(Graph g) {
 
 int main()
 {
-	string arq;
-	int vtc, vdd = 0;
 
-	do {
-        // cin >> arq;
-        // cin >> vtc;
+	string arq = "in.txt";
+	Graph g;
 
-        // cout << "'" << arq << "'\n";
-        // cout << "'" << vtc << "'\n";
-		cout << "\n------ TRABALHO PRATICO ------\n------ TEORIA DOS GRAFOS ------" << endl;
-	    cout << "Insira o nome do arquivo em que esta o grafo: ";
-	    getline(cin, arq);
-
-	    Graph g;
-	    g.build(arq);
-	    Graph h = build_max_comp(g);
-
-	    cout << "\n- Numero de vertices: " << g.vertex_size() << endl;
-	    cout << "- Numero de arestas: " << g.edge_size() << endl;
-	    cout << "- Numero de componentes conexas: " << g.w_cont() << endl;
-
-	    cout << "- Numero cromatico do grafo: " << h.chromatic() << endl; //NUMERO CROMATICO
+	g.build(arq);
 
 
-	    cout << "- Insira um vertice v para ver o numero de vertices adjacentes a ele: ";
-	    cin >> vtc;
+	cout << "Numero cromatico: " << g.chromatic() << endl;
+	// string arq;
+	// int vtc, vdd = 0;
 
-	    cout << "\n- Grau do vertice: " << h.degree(vtc) << endl;
-	    cout << "- Grau medio do grafo: " << h.degree_avg() << endl;
+	// do {
+ //        // cin >> arq;
+ //        // cin >> vtc;
 
-	    cout << "- Densidade do grafo: " << h.density() << endl;
+ //        // cout << "'" << arq << "'\n";
+ //        // cout << "'" << vtc << "'\n";
+	// 	cout << "\n------ TRABALHO PRATICO ------\n------ TEORIA DOS GRAFOS ------" << endl;
+	//     cout << "Insira o nome do arquivo em que esta o grafo: ";
+	//     getline(cin, arq);
 
-		cout << "- Insira um vertice v, para ver seu coeficiente de agrupamento: ";
-	    cin >> vtc;
-	    cout << "\n- Coeficiente de agrupamento do vertice: " << h.agrupamento_vertice(vtc) << endl;
-        //cout << "hadjashdkjashdkjashdakjdhkjashdakjsdhjkadjhkjash " << h.adj.begin()->first << endl;
-	    cout << "- Coeficiente de agrupamento medio do grafo: " << h.agrupamento_medio() << endl;
+	//     Graph g;
+	//     g.build(arq);
+	//     Graph h = build_max_comp(g);
 
-		cout << "- Insira um vertice v, para ver sua excentricidade efetiva: ";
-	    cin >> vtc;
-	    cout << "\n- Excentricidade efetiva do vertice: " << h.excentricidade_vertice(vtc) << endl;
-	    cout << "- Excentricidade efetiva do grafo: " << h.excentricidade_media() << endl;    
+	//     cout << "\n- Numero de vertices: " << g.vertex_size() << endl;
+	//     cout << "- Numero de arestas: " << g.edge_size() << endl;
+	//     cout << "- Numero de componentes conexas: " << g.w_cont() << endl;
 
-	    cout << "- Diametro efetivo do grafo: " << h.diametro_efetivo() << endl;
-		cout << "- Raio efetivo do grafo: " << h.raio_efetivo() << endl;
-
-		cout << "- Porcentagem de vertices centrais do grafo: " << h.vertices_centrais() << endl;
-		cout << "- Porcentagem de vertices extremos do grafo: " << h.vertices_extremos() << endl;
-
-        cout << "- Insira um vertice v, para ver sua centralidade: ";
-        cin >> vtc;	
-        cout << "\nCentralidade de " << vtc << ": " << h.centralidade_vertice(vtc) << endl;
-        cout << "Centralidade media do grafo: "<< h.centralidade_media() << endl;
-
-        cout << "\nDeseja analisar outro grafo?(1 - Sim || 0 - NAO)" << endl;
-        cin >> vdd;
+	//     cout << "- Numero cromatico do grafo: " << h.chromatic() << endl; //NUMERO CROMATICO
 
 
-	} while(vdd);
+	//     cout << "- Insira um vertice v para ver o numero de vertices adjacentes a ele: ";
+	//     cin >> vtc;
+
+	//     cout << "\n- Grau do vertice: " << h.degree(vtc) << endl;
+	//     cout << "- Grau medio do grafo: " << h.degree_avg() << endl;
+
+	//     cout << "- Densidade do grafo: " << h.density() << endl;
+
+	// 	cout << "- Insira um vertice v, para ver seu coeficiente de agrupamento: ";
+	//     cin >> vtc;
+	//     cout << "\n- Coeficiente de agrupamento do vertice: " << h.agrupamento_vertice(vtc) << endl;
+ //        //cout << "hadjashdkjashdkjashdakjdhkjashdakjsdhjkadjhkjash " << h.adj.begin()->first << endl;
+	//     cout << "- Coeficiente de agrupamento medio do grafo: " << h.agrupamento_medio() << endl;
+
+	// 	cout << "- Insira um vertice v, para ver sua excentricidade efetiva: ";
+	//     cin >> vtc;
+	//     cout << "\n- Excentricidade efetiva do vertice: " << h.excentricidade_vertice(vtc) << endl;
+	//     cout << "- Excentricidade efetiva do grafo: " << h.excentricidade_media() << endl;    
+
+	//     cout << "- Diametro efetivo do grafo: " << h.diametro_efetivo() << endl;
+	// 	cout << "- Raio efetivo do grafo: " << h.raio_efetivo() << endl;
+
+	// 	cout << "- Porcentagem de vertices centrais do grafo: " << h.vertices_centrais() << endl;
+	// 	cout << "- Porcentagem de vertices extremos do grafo: " << h.vertices_extremos() << endl;
+
+ //        cout << "- Insira um vertice v, para ver sua centralidade: ";
+ //        cin >> vtc;	
+ //        cout << "\nCentralidade de " << vtc << ": " << h.centralidade_vertice(vtc) << endl;
+ //        cout << "Centralidade media do grafo: "<< h.centralidade_media() << endl;
+
+ //        cout << "\nDeseja analisar outro grafo?(1 - Sim || 0 - NAO)" << endl;
+ //        cin >> vdd;
+
+
+	// } while(vdd);
     
 }
