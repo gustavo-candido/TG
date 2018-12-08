@@ -8,6 +8,8 @@ public:
     int N; // nº vertices
     int M; // nº arestas
     map<int, set<int> > adj; // lista de adjacência
+    map<int, int> excentricidade;
+    map<int, double> centralidade;
     set<int> visited;
 
     void build(string file_name) {
@@ -59,7 +61,7 @@ public:
     map<int,int> bfs(int u) { // retorno map(vértice v, dist_min(u,v))
         queue<int> q;
         map<int,int> dis;
-
+        int count=0;
         for(auto i: adj) dis[i.first] = INF;
 
         q.push(u);
@@ -74,6 +76,7 @@ public:
                     dis[w] = dis[v]+1;
                     q.push(w);
                 }
+                count++;
             }
         }
         return dis;
@@ -107,6 +110,33 @@ public:
         return ans;
     }
 
+    void excentricidade_centralidade(string arq) {
+
+        int k=1, sz = adj.size();
+        for(auto ux: adj) {
+            int u = ux.first;
+
+            map<int,int> dis = bfs(u);
+
+            /////////////// Excentricidade  //////////////
+            int exc=0;
+            for(auto i: dis) exc = max(exc, i.second);
+            excentricidade[u] = exc;  
+            //////////////////////////////////////////////
+
+            /////////////// Centralidade  //////////////
+            int n=0; 
+            for(auto i:dis){
+                if(i.second == INF) continue;
+                n+=i.second;
+            }
+            centralidade[u] = (double)(N-1)/(double)n;
+            ////////////////////////////////////////////
+
+            cout << "[" << arq << "] ........ [" << k++ << "|" << sz << "]\n";
+        }
+    }
+
     //////// Número de vértices, arestas e componentes ////////
     int vertex_size() { 
         return N;
@@ -134,26 +164,26 @@ public:
     }
 
     int chromatic() {
-    	int ans=0;
+        int ans=0;
         
         map<int, int> painted;
 
         set<int> colour;
 
         for(int i=1; i<=N; i++) {
-        	colour.insert(i);
+            colour.insert(i);
         }
 
         for(auto u: adj) {
-        	for(auto v: u.second) 
-        		if(painted.count(v)) colour.erase(painted[v]);
+            for(auto v: u.second) 
+                if(painted.count(v)) colour.erase(painted[v]);
 
-        	painted[u.first] = *colour.begin();
+            painted[u.first] = *colour.begin();
 
-        	ans = max(ans, painted[u.first]);
+            ans = max(ans, painted[u.first]);
 
-        	for(auto v: adj[u.first]) 
-        		if(painted.count(v)) colour.insert(painted[v]);
+            for(auto v: adj[u.first]) 
+                if(painted.count(v)) colour.insert(painted[v]);
         }
 
         return ans;
@@ -167,14 +197,14 @@ public:
         return adj[u].size();
     }
 
-    int degree_avg() {
-        int sum_degree = 0;
+    double degree_avg() {
+        double sum_degree = 0;
 
         for(auto i: adj) {
             sum_degree +=i.second.size();
         }
 
-        return sum_degree / N;
+        return sum_degree / (double)N;
     }
     ///////////////////////////////////////////////////////////
 
@@ -187,20 +217,25 @@ public:
     /////////////// Excentricidade efetiva média //////////////
 
     int excentricidade_vertice(int u) {
+        if(excentricidade.count(u)) {
+            return excentricidade[u];
+        }
+
         int ans=0;
+
         map<int,int> dis = bfs(u);
 
         for(auto i: dis) ans = max(ans, i.second);
 
-        return ans;
+        return excentricidade[u] = ans;
     }
 
-    int excentricidade_media() {
-        int sum = 0;
+    double excentricidade_media() {
+        double sum = 0;
 
         for(auto u: adj) sum+=excentricidade_vertice(u.first);
 
-        return sum/vertex_size();
+        return sum/(double)vertex_size();
     } 
     ///////////////////////////////////////////////////////////
 
@@ -230,27 +265,24 @@ public:
 
     //////////////////// Centralidade média ///////////////////
     
+    double centralidade_vertice(int u){
+        if(centralidade.count(u)) return centralidade[u];
 
-    double centralidade_vertice(int x){
-        // cout << "V: " << x << endl;
-        map<int,int> aux = bfs(x);
+        map<int,int> dis = bfs(u);
         int n=0; 
-        for(auto u:aux){
-            if(u.second == INF) continue;
+        for(auto i:dis){
+            if(i.second == INF) continue;
             else{ 
-                n+=u.second;
-                // cout << "*" << n << "*" << endl;
+                n+=i.second;
             }
         }
-        // cout << "&&" << double(N-1)/n << endl; 
-        return double(N-1)/n;
+        return centralidade[u] = (double)(N-1)/(double)n;
     }
 
     double centralidade_media(){
         double n=0.0;
         for(auto u:adj){
             n+=centralidade_vertice(u.first);
-            // cout << " ==> " << n << endl;
         }
         return n/(double)N;
     }
@@ -261,7 +293,7 @@ public:
     double vertices_centrais() {
         int count=0;
         int raio = raio_efetivo();
-        for(auto u:adj) 
+        for(auto u:adj)     
             if(excentricidade_vertice(u.first) == raio) count++;
 
         return 100.0 * ( (double)count/vertex_size() );
@@ -306,6 +338,7 @@ public:
         for(auto u:adj){
             aux +=agrupamento_vertice(u.first);
         }
+        
         return aux/(long double) N;
     }
 
@@ -336,74 +369,53 @@ Graph build_max_comp(Graph g) {
     return h;
 }
 
+void results(Graph g, string in_arq) {
+    Graph h = build_max_comp(g);    
+
+    h.excentricidade_centralidade(in_arq);
+
+    ofstream myfile;
+
+    myfile.open ("out_"+in_arq);
+
+    myfile << "======================BEGIN======================\n";
+    myfile << "GRAFO "                      << in_arq             << endl;
+    myfile << "N. de vertices: "            << g.vertex_size()    << endl;
+    myfile << "N. de arestas: "             << g.edge_size()      << endl;
+    myfile << "N. de componentes conexas: " << g.w_cont()         << endl;
+ 
+    myfile << endl;
+
+    myfile << "ANALISE DA MAIOR COMPONENTE\n";
+
+    myfile << "N. de vertices: " << h.vertex_size() << endl;
+    myfile << "N. de arestas: "  << h.edge_size()   << endl;
+    myfile << "N. cromatico: "   << h.chromatic()   << endl;
+    myfile << "Grau medio: "     << h.degree_avg()  << endl;
+    myfile << "Densidade: "      << h.density()     << endl;
+
+
+    myfile << "Coeficiente de agrupamento medio: " << h.agrupamento_medio()     << endl;
+    myfile << "Excentricidade efetiva media: "     << h.excentricidade_media()  << endl;
+    myfile << "Diametro efetivo: "                 << h.diametro_efetivo()      << endl;
+    myfile << "Raio efetivo: "                     << h.raio_efetivo()          << endl;
+    myfile << "Centralidade media: "               << h.centralidade_media()    << endl;
+    myfile << "Porcentagem de vertices centrais: " << h.vertices_centrais()     << endl;
+    myfile << "Porcentagem de vertices extremos: " << h.vertices_extremos()     << endl;
+
+    myfile << "=======================END=======================\n";
+    myfile.close();
+}
+
+
 int main()
 {
 
-	string arq = "in.txt";
-	Graph g;
-
-	g.build(arq);
+    string arq = "CA-CondMat.txt";
 
 
-	cout << "Numero cromatico: " << g.chromatic() << endl;
-	// string arq;
-	// int vtc, vdd = 0;
+    Graph g;
 
-	// do {
- //        // cin >> arq;
- //        // cin >> vtc;
-
- //        // cout << "'" << arq << "'\n";
- //        // cout << "'" << vtc << "'\n";
-	// 	cout << "\n------ TRABALHO PRATICO ------\n------ TEORIA DOS GRAFOS ------" << endl;
-	//     cout << "Insira o nome do arquivo em que esta o grafo: ";
-	//     getline(cin, arq);
-
-	//     Graph g;
-	//     g.build(arq);
-	//     Graph h = build_max_comp(g);
-
-	//     cout << "\n- Numero de vertices: " << g.vertex_size() << endl;
-	//     cout << "- Numero de arestas: " << g.edge_size() << endl;
-	//     cout << "- Numero de componentes conexas: " << g.w_cont() << endl;
-
-	//     cout << "- Numero cromatico do grafo: " << h.chromatic() << endl; //NUMERO CROMATICO
-
-
-	//     cout << "- Insira um vertice v para ver o numero de vertices adjacentes a ele: ";
-	//     cin >> vtc;
-
-	//     cout << "\n- Grau do vertice: " << h.degree(vtc) << endl;
-	//     cout << "- Grau medio do grafo: " << h.degree_avg() << endl;
-
-	//     cout << "- Densidade do grafo: " << h.density() << endl;
-
-	// 	cout << "- Insira um vertice v, para ver seu coeficiente de agrupamento: ";
-	//     cin >> vtc;
-	//     cout << "\n- Coeficiente de agrupamento do vertice: " << h.agrupamento_vertice(vtc) << endl;
- //        //cout << "hadjashdkjashdkjashdakjdhkjashdakjsdhjkadjhkjash " << h.adj.begin()->first << endl;
-	//     cout << "- Coeficiente de agrupamento medio do grafo: " << h.agrupamento_medio() << endl;
-
-	// 	cout << "- Insira um vertice v, para ver sua excentricidade efetiva: ";
-	//     cin >> vtc;
-	//     cout << "\n- Excentricidade efetiva do vertice: " << h.excentricidade_vertice(vtc) << endl;
-	//     cout << "- Excentricidade efetiva do grafo: " << h.excentricidade_media() << endl;    
-
-	//     cout << "- Diametro efetivo do grafo: " << h.diametro_efetivo() << endl;
-	// 	cout << "- Raio efetivo do grafo: " << h.raio_efetivo() << endl;
-
-	// 	cout << "- Porcentagem de vertices centrais do grafo: " << h.vertices_centrais() << endl;
-	// 	cout << "- Porcentagem de vertices extremos do grafo: " << h.vertices_extremos() << endl;
-
- //        cout << "- Insira um vertice v, para ver sua centralidade: ";
- //        cin >> vtc;	
- //        cout << "\nCentralidade de " << vtc << ": " << h.centralidade_vertice(vtc) << endl;
- //        cout << "Centralidade media do grafo: "<< h.centralidade_media() << endl;
-
- //        cout << "\nDeseja analisar outro grafo?(1 - Sim || 0 - NAO)" << endl;
- //        cin >> vdd;
-
-
-	// } while(vdd);
-    
+    g.build(arq);
+    results(g, arq);
 }
